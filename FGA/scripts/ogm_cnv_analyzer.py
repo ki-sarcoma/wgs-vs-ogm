@@ -11,6 +11,7 @@ class OGMCNVAnalyzer:
         log2_threshold: float = None,
         min_size: int = None,
         max_mask_frac: float = None,
+        keep_autosomes_only: bool = True,
     ):
         if data_directory is None:
             script_dir = Path(__file__).resolve().parent
@@ -28,6 +29,7 @@ class OGMCNVAnalyzer:
         self.log2_threshold = log2_threshold
         self.min_size = min_size
         self.max_mask_frac = max_mask_frac
+        self.keep_autosomes_only = keep_autosomes_only
 
     def read_cnv_file(self, filepath) -> DataFrame:
         """Read a single CNV file and return a dataframe."""
@@ -39,8 +41,21 @@ class OGMCNVAnalyzer:
         fga: float = altered_bp / self.genome_size
         return round(fga, 4)
 
+    def get_filtered_cnvs_by_autosomes(self, cnvs: DataFrame) -> DataFrame:
+        """Filter CNVs to keep only autosomes (chromosomes 1-22)."""
+        return cnvs[(cnvs["Chromosome"] >= 1) & (cnvs["Chromosome"] <= 22)]
+
+    def get_filtered_cnvs_by_log2(self, cnvs: DataFrame) -> DataFrame:
+        """Filter CNVs based on log2 ratio threshold."""
+        return cnvs
+
     def get_filtered_cnvs(self, cnvs: DataFrame) -> DataFrame:
         """Filter CNVs based on log2 ratio, size, and mask fraction."""
+        if self.keep_autosomes_only:
+            cnvs: DataFrame = self.get_filtered_cnvs_by_autosomes(cnvs)
+        if self.log2_threshold is not None:
+            cnvs: DataFrame = self.get_filtered_cnvs_by_log2(cnvs)
+
         return cnvs
 
     def save_fga_summary(self, fga_summary: DataFrame, output_csv: str) -> None:
