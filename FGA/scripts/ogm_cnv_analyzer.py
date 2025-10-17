@@ -1,5 +1,5 @@
 from pathlib import Path
-from pandas import DataFrame, read_csv, concat
+from pandas import DataFrame, read_csv
 
 
 class OGMCNVAnalyzer:
@@ -7,10 +7,10 @@ class OGMCNVAnalyzer:
         self,
         data_directory: Path = None,
         results_directory: Path = None,
-        genome_size: int = 2_875_001_522,  # hg38
+        genome_size: int = 2_875_001_522,  # Autosomal hg38
+        keep_autosomes_only: bool = True,
         min_size: int = None,
         log2_threshold: float = None,
-        keep_autosomes_only: bool = True,
     ):
         if data_directory is None:
             script_dir = Path(__file__).resolve().parent
@@ -43,6 +43,10 @@ class OGMCNVAnalyzer:
         """Filter CNVs to keep only autosomes (chromosomes 1-22)."""
         return cnvs[(cnvs["Chromosome"] >= 1) & (cnvs["Chromosome"] <= 22)]
 
+    def get_filtered_cnvs_by_size(self, cnvs: DataFrame) -> DataFrame:
+        """Filter CNVs based on minimum size threshold."""
+        return cnvs[cnvs["Size"] >= self.min_size]
+
     def get_filtered_cnvs_by_log2(self, cnvs: DataFrame) -> DataFrame:
         """Filter CNVs based on log2 ratio threshold."""
         return cnvs
@@ -51,6 +55,8 @@ class OGMCNVAnalyzer:
         """Filter CNVs based on log2 ratio, size, and mask fraction."""
         if self.keep_autosomes_only:
             cnvs: DataFrame = self.get_filtered_cnvs_by_autosomes(cnvs)
+        if self.min_size is not None:
+            cnvs: DataFrame = self.get_filtered_cnvs_by_size(cnvs)
         if self.log2_threshold is not None:
             cnvs: DataFrame = self.get_filtered_cnvs_by_log2(cnvs)
 
