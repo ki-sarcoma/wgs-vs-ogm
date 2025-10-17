@@ -47,9 +47,14 @@ class OGMCNVAnalyzer:
         """Filter CNVs based on minimum size threshold."""
         return cnvs[cnvs["Size"] >= self.min_size]
 
-    def get_filtered_cnvs_by_log2(self, cnvs: DataFrame) -> DataFrame:
+    def get_filtered_cnvs_by_log2_ratio(self, cnvs: DataFrame) -> DataFrame:
         """Filter CNVs based on log2 ratio threshold."""
-        return cnvs
+        upper_threshold: float = 2 * 2**self.log2_threshold  # gain threshold
+        lower_threshold: float = 2 * 2 ** (-self.log2_threshold)  # loss threshold
+        return cnvs[
+            (cnvs["fractionalCopyNumber"] >= lower_threshold)
+            & (cnvs["fractionalCopyNumber"] <= upper_threshold)
+        ]
 
     def get_filtered_cnvs(self, cnvs: DataFrame) -> DataFrame:
         """Filter CNVs based on log2 ratio, size, and mask fraction."""
@@ -58,7 +63,7 @@ class OGMCNVAnalyzer:
         if self.min_size is not None:
             cnvs: DataFrame = self.get_filtered_cnvs_by_size(cnvs)
         if self.log2_threshold is not None:
-            cnvs: DataFrame = self.get_filtered_cnvs_by_log2(cnvs)
+            cnvs: DataFrame = self.get_filtered_cnvs_by_log2_ratio(cnvs)
 
         return cnvs
 
