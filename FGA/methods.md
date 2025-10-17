@@ -38,25 +38,25 @@ The log<sub>2</sub> ratio is calculated using the fractional copy number:
 
 $\log_2 \text{ ratio} = \log_2 \frac{fractionalCopyNumber}{2}$
 
-> [!NOTE] Todo
+> [!NOTE]
 > Adjust each CNV segment for tumor fraction.
 
 ### 4. Confidence Threshold
 
-> [!NOTE] Todo  
+> [!NOTE]  
 >
 > - Filter out variants with low confidence scores (`Confidence` column).
 > - I've observed quite a lot of zeros, so this value may not be entirely reliable.
 
 ### 5. Masked Regions
 
-> [!NOTE] Todo
+> [!NOTE]
 >
 > - Exclude variants overlapping heavily masked regions (`Mask_overlap_fract` column).
 
 ### 6. Overlap with DGV
 
-> [!NOTE] Todo
+> [!NOTE]
 >
 > - Exclude CNVs with high overlap with the Database of Genomic Variants (DGV), as these are often benign (`num_overlap_DGV_calls` column).
 > - We should include them only if the goal is to capture all genomic alterations.
