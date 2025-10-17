@@ -5,12 +5,11 @@ from pandas import DataFrame, read_csv, concat
 class OGMCNVAnalyzer:
     def __init__(
         self,
-        genome_size: int = 2_875_001_522,  # hg38
         data_directory: Path = None,
         results_directory: Path = None,
-        log2_threshold: float = None,
+        genome_size: int = 2_875_001_522,  # hg38
         min_size: int = None,
-        max_mask_frac: float = None,
+        log2_threshold: float = None,
         keep_autosomes_only: bool = True,
     ):
         if data_directory is None:
@@ -26,9 +25,8 @@ class OGMCNVAnalyzer:
             self.results_directory = Path(results_directory).resolve()
 
         self.genome_size = genome_size
-        self.log2_threshold = log2_threshold
         self.min_size = min_size
-        self.max_mask_frac = max_mask_frac
+        self.log2_threshold = log2_threshold
         self.keep_autosomes_only = keep_autosomes_only
 
     def read_cnv_file(self, filepath) -> DataFrame:
