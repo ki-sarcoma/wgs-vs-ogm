@@ -33,12 +33,6 @@ class OGMCNVAnalyzer:
         """Read a single CNV file and return a dataframe."""
         return read_csv(filepath, sep="\t", header=5)
 
-    def calculate_fga_for_sample(self, cnvs: DataFrame) -> float:
-        """Calculate fraction of genome altered."""
-        altered_bp: int = cnvs["Size"].sum(skipna=True)
-        fga: float = altered_bp / self.genome_size
-        return round(fga, 4)
-
     def get_filtered_cnvs_by_autosomes(self, cnvs: DataFrame) -> DataFrame:
         """Filter CNVs to keep only autosomes (chromosomes 1-22)."""
         return cnvs[(cnvs["Chromosome"] >= 1) & (cnvs["Chromosome"] <= 22)]
@@ -66,6 +60,12 @@ class OGMCNVAnalyzer:
             cnvs: DataFrame = self.get_filtered_cnvs_by_log2_ratio(cnvs)
 
         return cnvs
+
+    def calculate_fga_for_sample(self, cnvs: DataFrame) -> float:
+        """Calculate fraction of genome altered."""
+        altered_bp: int = cnvs["Size"].sum(skipna=True)
+        fga: float = altered_bp / self.genome_size
+        return round(fga, 4)
 
     def save_fga_summary(self, fga_summary: DataFrame, output_csv: str) -> None:
         """Save FGA summary to a CSV file."""
