@@ -1,5 +1,6 @@
 from pathlib import Path
 from pandas import DataFrame, read_csv
+from numpy import log2
 
 
 class OGMCNVAnalyzer:
@@ -35,7 +36,8 @@ class OGMCNVAnalyzer:
 
     def get_filtered_cnvs_by_autosomes(self, cnvs: DataFrame) -> DataFrame:
         """Filter CNVs to keep only autosomes (chromosomes 1-22)."""
-        return cnvs[(cnvs["Chromosome"] >= 1) & (cnvs["Chromosome"] <= 22)]
+        cnvs_filtered = cnvs[cnvs["Chromosome"].astype(str).str.isdigit()]
+        return cnvs_filtered[cnvs_filtered["Chromosome"].astype(int).between(1, 22)]
 
     def get_filtered_cnvs_by_size(self, cnvs: DataFrame) -> DataFrame:
         """Filter CNVs based on minimum size threshold."""
@@ -43,11 +45,12 @@ class OGMCNVAnalyzer:
 
     def get_filtered_cnvs_by_log2_ratio(self, cnvs: DataFrame) -> DataFrame:
         """Filter CNVs based on log2 ratio threshold."""
-        upper_threshold: float = 2 * 2**self.log2_threshold  # gain threshold
-        lower_threshold: float = 2 * 2 ** (-self.log2_threshold)  # loss threshold
+        upper_threshold = 2 * 2**self.log2_threshold  # gain threshold
+        lower_threshold = 2 / 2**self.log2_threshold  # loss threshold
+
         return cnvs[
-            (cnvs["fractionalCopyNumber"] >= lower_threshold)
-            & (cnvs["fractionalCopyNumber"] <= upper_threshold)
+            (cnvs["fractionalCopyNumber"] >= upper_threshold)
+            | (cnvs["fractionalCopyNumber"] <= lower_threshold)
         ]
 
     def get_filtered_cnvs(self, cnvs: DataFrame) -> DataFrame:
