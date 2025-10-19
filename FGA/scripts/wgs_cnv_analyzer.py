@@ -34,6 +34,11 @@ class WGSCNVAnalyzer:
         """Read a single CNV file and return a dataframe."""
         return read_csv(filepath, sep="\t", header=0)
 
+    def get_size_cnvs(self, cnvs: DataFrame) -> DataFrame:
+        """Calculate size column for CNVs."""
+        cnvs["size"] = cnvs["end"] - cnvs["start"] + 1
+        return cnvs
+
     def get_sample_purity(self, sample_id: str) -> float:
         """Retrieve sample purity from a metadata file."""
         tumor_fraction_path = Path(self.data_directory.parent, "tumor_fraction.csv")
@@ -45,7 +50,7 @@ class WGSCNVAnalyzer:
             raise ValueError(f"SampleID {sample_id} not found in tumor_fraction.csv")
         return result.values[0]
 
-    def get_purity_corrected_log2_ratios(
+    def get_purity_corrected_log2_ratios_cnvs(
         self, sample_id: str, cnvs: DataFrame
     ) -> DataFrame:
         """Calculate purity-corrected log2 ratios for CNVs."""
@@ -62,7 +67,6 @@ class WGSCNVAnalyzer:
 
     def get_filtered_cnvs_by_size(self, cnvs: DataFrame) -> DataFrame:
         """Filter CNVs based on minimum size threshold."""
-        cnvs["size"] = cnvs["end"] - cnvs["start"] + 1
         return cnvs[cnvs["size"] >= self.min_size]
 
     def get_filtered_cnvs_by_log2_ratio(self, cnvs: DataFrame) -> DataFrame:
@@ -99,8 +103,13 @@ class WGSCNVAnalyzer:
             sample_id: str = filepath.stem.split("-")[2][1:-2]
             cnvs: DataFrame = self.read_cnv_file(filepath)
 
+            # Calculate size column
+            cnvs: DataFrame = self.get_size_cnvs(cnvs)
+
             # Calculate purity-corrected log2 ratios
-            cnvs: DataFrame = self.get_purity_corrected_log2_ratios(sample_id, cnvs)
+            cnvs: DataFrame = self.get_purity_corrected_log2_ratios_cnvs(
+                sample_id, cnvs
+            )
 
             # Filter CNVs
             filtered_cnvs = self.get_filtered_cnvs(cnvs)
@@ -113,5 +122,5 @@ class WGSCNVAnalyzer:
 
 
 if __name__ == "__main__":
-    ogm_cnv_analyzer = WGSCNVAnalyzer(min_size=50_000, log2_threshold=0.3)
+    ogm_cnv_analyzer = WGSCNVAnalyzer(min_size=50_000, log2_threshold=0.2)
     ogm_cnv_analyzer.compute_fga(output_csv="wgs_fga.csv")
