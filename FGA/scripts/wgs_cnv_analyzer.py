@@ -1,5 +1,5 @@
 from pathlib import Path
-from numpy import log2
+from numpy import log2, maximum
 from pandas import DataFrame, Series, read_csv
 
 
@@ -56,7 +56,9 @@ class WGSCNVAnalyzer:
         """Calculate purity-corrected log2 ratios for CNVs."""
         sample_purity: float = self.get_sample_purity(sample_id)
         copy_number_obs = 2 * (2 ** cnvs["log2"])
-        copy_number_tumor = (copy_number_obs - 2 * (1 - sample_purity)) / sample_purity
+        copy_number_tumor = maximum(
+            (copy_number_obs - 2 * (1 - sample_purity)) / sample_purity, 0.01
+        )
         cnvs["log2_corrected"] = round(log2(copy_number_tumor / 2), 2)
         return cnvs
 
@@ -71,7 +73,7 @@ class WGSCNVAnalyzer:
 
     def get_filtered_cnvs_by_log2_ratio(self, cnvs: DataFrame) -> DataFrame:
         """Filter CNVs based on log2 ratio threshold."""
-        return cnvs[cnvs["log2"].abs() >= self.log2_threshold]
+        return cnvs[cnvs["log2_corrected"].abs() >= self.log2_threshold]
 
     def get_filtered_cnvs(self, cnvs: DataFrame) -> DataFrame:
         """Filter CNVs based on log2 ratio, size, and mask fraction."""
@@ -118,6 +120,7 @@ class WGSCNVAnalyzer:
             fga: float = self.calculate_fga_for_sample(filtered_cnvs)
             fga_summary.append({"SampleID": sample_id, "FGA": fga})
 
+        fga_summary.sort(key=lambda x: int(x["SampleID"]))
         self.save_fga_summary(DataFrame(fga_summary), output_csv)
 
 

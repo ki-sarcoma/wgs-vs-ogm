@@ -44,3 +44,32 @@ CNV segments were retained if their log<sub>2</sub> copy number ratio met the fo
 - **Loss:** log<sub>2</sub> ratio ≤ –0.2
 
 These thresholds correspond approximately to a fractional copy number of ≥ 2.30 for gains and ≤ 1.74 for losses, assuming a diploid baseline of 2 copies.
+
+#### WGS
+
+Observed log<sub>2</sub> ratios from tumor samples are influenced by the fraction of normal cells in the sample (tumor purity). To estimate the tumor-specific log<sub>2</sub> ratio, the following formulas were applied:
+
+##### 1. Convert observed log<sub>2</sub> ratio to absolute copy number
+
+$$
+CN_{obs} = CN_{normal} \cdot 2^{\text{log2}_{obs}}
+$$
+
+Where:  
+
+- $CN_{normal} = 2$ (diploid reference)  
+- $\text{log2}_{obs}$ = observed log<sub>2</sub> ratio  
+
+##### 2. Adjust for tumor purity $p$
+
+$$
+CN_{tumor} = \frac{ CN_{obs} - CN_{normal} \cdot (1 - p) }{ p }
+$$
+
+- For numerical stability, values were clipped to a minimum of 0.01 to avoid negative copy numbers.
+
+##### 3. Convert back to log<sub>2</sub> ratio (tumor-specific)
+
+$$
+\text{log2}_{corrected} = \log_2 \left( \frac{ CN_{tumor} }{ CN_{normal} } \right)
+$$
