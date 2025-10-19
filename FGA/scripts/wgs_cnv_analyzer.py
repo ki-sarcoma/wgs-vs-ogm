@@ -1,5 +1,6 @@
 from pathlib import Path
-from pandas import DataFrame, read_csv
+from numpy import log2
+from pandas import DataFrame, Series, read_csv
 
 
 class WGSCNVAnalyzer:
@@ -32,6 +33,27 @@ class WGSCNVAnalyzer:
     def read_cnv_file(self, filepath) -> DataFrame:
         """Read a single CNV file and return a dataframe."""
         return read_csv(filepath, sep="\t", header=0)
+
+    def get_sample_purity(self, sample_id: str) -> float:
+        """Retrieve sample purity from a metadata file."""
+        tumor_fraction_path = Path(self.data_directory.parent, "tumor_fraction.csv")
+        tumor_fraction: DataFrame = read_csv(tumor_fraction_path, sep=",")
+        result: Series = tumor_fraction.loc[
+            tumor_fraction["SampleID"].astype(str) == sample_id, "Tumor fraction"
+        ]
+        if result.empty:
+            raise ValueError(f"SampleID {sample_id} not found in tumor_fraction.csv")
+        return result.values[0]
+
+    def get_purity_corrected_log2_ratios(
+        self, sample_id: str, cnvs: DataFrame
+    ) -> DataFrame:
+        """Calculate purity-corrected log2 ratios for CNVs."""
+        sample_purity: float = self.get_sample_purity(sample_id)
+        copy_number_obs = 2 * (2 ** cnvs["log2"])
+        copy_number_tumor = (copy_number_obs - 2 * (1 - sample_purity)) / sample_purity
+        cnvs["log2_corrected"] = round(log2(copy_number_tumor / 2), 2)
+        return cnvs
 
     def get_filtered_cnvs_by_autosomes(self, cnvs: DataFrame) -> DataFrame:
         """Filter CNVs to keep only autosomes (chromosomes 1-22)."""
@@ -77,6 +99,9 @@ class WGSCNVAnalyzer:
             sample_id: str = filepath.stem.split("-")[2][1:-2]
             cnvs: DataFrame = self.read_cnv_file(filepath)
 
+            # Calculate purity-corrected log2 ratios
+            cnvs: DataFrame = self.get_purity_corrected_log2_ratios(sample_id, cnvs)
+
             # Filter CNVs
             filtered_cnvs = self.get_filtered_cnvs(cnvs)
 
@@ -88,5 +113,5 @@ class WGSCNVAnalyzer:
 
 
 if __name__ == "__main__":
-    ogm_cnv_analyzer = WGSCNVAnalyzer()
+    ogm_cnv_analyzer = WGSCNVAnalyzer(min_size=50_000, log2_threshold=0.3)
     ogm_cnv_analyzer.compute_fga(output_csv="wgs_fga.csv")
