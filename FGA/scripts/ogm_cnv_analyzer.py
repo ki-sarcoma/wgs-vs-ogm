@@ -1,6 +1,6 @@
 from pathlib import Path
-from pandas import DataFrame, read_csv
-from numpy import log2
+from pandas import DataFrame, Series, read_csv
+from numpy import log2, maximum
 
 
 class OGMCNVAnalyzer:
@@ -34,6 +34,29 @@ class OGMCNVAnalyzer:
         """Read a single CNV file and return a dataframe."""
         return read_csv(filepath, sep="\t", header=5)
 
+    def get_sample_purity(self, sample_id: str) -> float:
+        """Retrieve sample purity from a metadata file."""
+        tumor_fraction_path = Path(self.data_directory.parent, "tumor_fraction.csv")
+        tumor_fraction: DataFrame = read_csv(tumor_fraction_path, sep=",")
+        result: Series = tumor_fraction.loc[
+            tumor_fraction["SampleID"].astype(str) == sample_id, "Tumor fraction"
+        ]
+        if result.empty:
+            raise ValueError(f"SampleID {sample_id} not found in tumor_fraction.csv")
+        return result.values[0]
+
+    def get_purity_corrected_log2_ratios_cnvs(
+        self, sample_id: str, cnvs: DataFrame
+    ) -> DataFrame:
+        """Calculate purity-corrected log2 ratios for CNVs."""
+        sample_purity: float = self.get_sample_purity(sample_id)
+        copy_number_obs = cnvs["fractionalCopyNumber"]
+        copy_number_tumor = maximum(
+            (copy_number_obs - 2 * (1 - sample_purity)) / sample_purity, 0.01
+        )
+        cnvs["log2_corrected"] = round(log2(copy_number_tumor / 2), 2)
+        return cnvs
+
     def get_filtered_cnvs_by_autosomes(self, cnvs: DataFrame) -> DataFrame:
         """Filter CNVs to keep only autosomes (chromosomes 1-22)."""
         cnvs_filtered = cnvs[cnvs["Chromosome"].astype(str).str.isdigit()]
@@ -45,13 +68,7 @@ class OGMCNVAnalyzer:
 
     def get_filtered_cnvs_by_log2_ratio(self, cnvs: DataFrame) -> DataFrame:
         """Filter CNVs based on log2 ratio threshold."""
-        upper_threshold = 2 * 2**self.log2_threshold  # gain threshold
-        lower_threshold = 2 / 2**self.log2_threshold  # loss threshold
-
-        return cnvs[
-            (cnvs["fractionalCopyNumber"] >= upper_threshold)
-            | (cnvs["fractionalCopyNumber"] <= lower_threshold)
-        ]
+        return cnvs[cnvs["log2_corrected"].abs() >= self.log2_threshold]
 
     def get_filtered_cnvs(self, cnvs: DataFrame) -> DataFrame:
         """Filter CNVs based on log2 ratio, size, and mask fraction."""
@@ -83,6 +100,11 @@ class OGMCNVAnalyzer:
             sample_id: str = filepath.stem.split("_")[0]
             cnvs: DataFrame = self.read_cnv_file(filepath)
 
+            # Calculate purity-corrected log2 ratios
+            cnvs: DataFrame = self.get_purity_corrected_log2_ratios_cnvs(
+                sample_id, cnvs
+            )
+
             # Filter CNVs
             filtered_cnvs = self.get_filtered_cnvs(cnvs)
 
@@ -90,9 +112,10 @@ class OGMCNVAnalyzer:
             fga: float = self.calculate_fga_for_sample(filtered_cnvs)
             fga_summary.append({"SampleID": sample_id, "FGA": fga})
 
+        fga_summary.sort(key=lambda x: int(x["SampleID"]))
         self.save_fga_summary(DataFrame(fga_summary), output_csv)
 
 
 if __name__ == "__main__":
-    ogm_cnv_analyzer = OGMCNVAnalyzer()
+    ogm_cnv_analyzer = OGMCNVAnalyzer(min_size=50_000, log2_threshold=0.2)
     ogm_cnv_analyzer.compute_fga(output_csv="ogm_fga.csv")
