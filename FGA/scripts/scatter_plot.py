@@ -27,8 +27,8 @@ plt.scatter(
     df["FGA_OGM"],
     df["FGA_WGS"],
     color="dodgerblue",
-    edgecolor="k",
     alpha=0.6,
+    edgecolor="k",
     s=70,
 )
 line_range = [0, 1]
@@ -70,7 +70,7 @@ plt.text(
 plt.legend()
 plt.tight_layout()
 
-plot_file = Path(results_directory, "fga_comparison.png")
+plot_file = Path(results_directory, "scatter_plot_FGA.png")
 plt.savefig(plot_file, dpi=300)
 
 plt.show()
