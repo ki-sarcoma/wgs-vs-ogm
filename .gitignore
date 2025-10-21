@@ -10,4 +10,4 @@ __pycache__/
 
 # Project specific
 **/data/
-
+**/results
