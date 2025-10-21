@@ -3,10 +3,10 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from scipy.stats import pearsonr
 
+# Paths
 script_dir = Path(__file__).resolve().parent
 results_directory = Path(script_dir.parent, "results").resolve()
 
-# File paths
 ogm_file = Path(results_directory, "ogm_fga.csv")
 wgs_file = Path(results_directory, "wgs_fga.csv")
 
@@ -14,30 +14,57 @@ wgs_file = Path(results_directory, "wgs_fga.csv")
 df_ogm = pd.read_csv(ogm_file)
 df_wgs = pd.read_csv(wgs_file)
 
-# Merge on SampleID
+# Merge
 df = pd.merge(df_ogm, df_wgs, on="SampleID", suffixes=("_OGM", "_WGS"))
 
-# Compute Pearson correlation coefficient
+# Pearson correlation
 r, p_value = pearsonr(df["FGA_OGM"], df["FGA_WGS"])
-print(f"Pearson correlation: r = {r:.3f}, p-value = {p_value:.3e}")
+n_samples = len(df)
 
-# Scatter plot
+# Plot
 plt.figure(figsize=(8, 6))
-plt.scatter(df["FGA_OGM"], df["FGA_WGS"], color="dodgerblue", edgecolor="k", alpha=0.7)
-plt.plot([0, 1], [0, 1], color="red", linestyle="--", label="y = x")
-plt.xlabel("FGA (OGM)")
-plt.ylabel("FGA (WGS)")
-plt.title("Comparison of FGA: OGM vs WGS")
-plt.grid(True)
+plt.scatter(
+    df["FGA_OGM"],
+    df["FGA_WGS"],
+    color="dodgerblue",
+    edgecolor="k",
+    alpha=0.7,
+    s=80,
+)
+line_range = [0, 1]
+plt.plot(line_range, line_range, color="red", linestyle="--", label="y = x")
 
-# Add correlation text to the plot
+# Plot labels and grid
+plt.xlabel("FGA (OGM)", fontsize=12)
+plt.ylabel("FGA (WGS)", fontsize=12)
+plt.grid(True, linestyle="--", alpha=0.5)
+
+# Add correlation
 plt.text(
-    0.05,
-    0.9,
-    f"r = {r:.2f}",
-    transform=plt.gca().transAxes,
-    fontsize=12,
-    bbox=dict(facecolor="white", alpha=0.5),
+    -0.03,
+    1,
+    f"Pearson r = {r:.2f}",
+    fontsize=10,
+    bbox=dict(
+        facecolor="white",
+        boxstyle="round,rounding_size=0.2, pad=0.3",
+        alpha=0.3,
+        edgecolor="gray",
+    ),
+)
+
+# Add sample size
+plt.text(
+    -0.03,
+    0.94,
+    f"n= {n_samples}",
+    fontsize=10,
+    bbox=dict(
+        facecolor="white",
+        boxstyle="round,rounding_size=0.2, pad=0.3",
+        alpha=0.3,
+        edgecolor="gray",
+    ),
 )
 
 plt.legend()
