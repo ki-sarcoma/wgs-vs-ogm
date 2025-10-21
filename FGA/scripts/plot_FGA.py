@@ -28,22 +28,22 @@ plt.scatter(
     df["FGA_WGS"],
     color="dodgerblue",
     edgecolor="k",
-    alpha=0.7,
-    s=80,
+    alpha=0.6,
+    s=70,
 )
 line_range = [0, 1]
-plt.plot(line_range, line_range, color="red", linestyle="--", label="y = x")
+plt.plot(line_range, line_range, color="red", linestyle="dotted", label="y = x")
 
 # Plot labels and grid
 plt.xlabel("FGA (OGM)", fontsize=12)
 plt.ylabel("FGA (WGS)", fontsize=12)
-plt.grid(True, linestyle="--", alpha=0.5)
+plt.grid(True, linestyle="--", alpha=0.4)
 
 # Add correlation
 plt.text(
     -0.03,
     1,
-    f"Pearson r = {r:.2f}",
+    f"n= {n_samples}",
     fontsize=10,
     bbox=dict(
         facecolor="white",
@@ -57,7 +57,7 @@ plt.text(
 plt.text(
     -0.03,
     0.94,
-    f"n= {n_samples}",
+    f"Pearson r = {r:.2f}",
     fontsize=10,
     bbox=dict(
         facecolor="white",
