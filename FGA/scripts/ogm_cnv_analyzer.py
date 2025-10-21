@@ -29,20 +29,13 @@ class OGMCNVAnalyzer(CNVAnalyzer):
         script_dir = Path(__file__).resolve().parent
         return Path(script_dir.parent, "data", "OGM").resolve()
 
+    def get_sample_id_from_path(self, filepath: Path) -> str:
+        """Extract sample ID from file path."""
+        return filepath.stem.split("_")[0]
+
     def read_cnv_file(self, filepath) -> DataFrame:
         """Read a single CNV file and return a dataframe."""
         return read_csv(filepath, sep="\t", header=5)
-
-    def get_sample_purity(self, sample_id: str) -> float:
-        """Retrieve sample purity from a metadata file."""
-        tumor_fraction_path = Path(self.data_directory.parent, "tumor_fraction.csv")
-        tumor_fraction: DataFrame = read_csv(tumor_fraction_path, sep=",")
-        result: Series = tumor_fraction.loc[
-            tumor_fraction["SampleID"].astype(str) == sample_id, "Tumor fraction"
-        ]
-        if result.empty:
-            raise ValueError(f"SampleID {sample_id} not found in tumor_fraction.csv")
-        return result.values[0]
 
     def get_purity_corrected_log2_ratios_cnvs(
         self, sample_id: str, cnvs: DataFrame
@@ -65,54 +58,11 @@ class OGMCNVAnalyzer(CNVAnalyzer):
         """Filter CNVs based on minimum size threshold."""
         return cnvs[cnvs["Size"] >= self.min_size]
 
-    def get_filtered_cnvs_by_log2_ratio(self, cnvs: DataFrame) -> DataFrame:
-        """Filter CNVs based on log2 ratio threshold."""
-        return cnvs[cnvs["log2_corrected"].abs() >= self.log2_threshold]
-
-    def get_filtered_cnvs(self, cnvs: DataFrame) -> DataFrame:
-        """Filter CNVs based on log2 ratio, size, and mask fraction."""
-        if self.keep_autosomes_only:
-            cnvs: DataFrame = self.get_filtered_cnvs_by_autosomes(cnvs)
-        if self.min_size is not None:
-            cnvs: DataFrame = self.get_filtered_cnvs_by_size(cnvs)
-        if self.log2_threshold is not None:
-            cnvs: DataFrame = self.get_filtered_cnvs_by_log2_ratio(cnvs)
-
-        return cnvs
-
     def calculate_fga_for_sample(self, cnvs: DataFrame) -> float:
         """Calculate fraction of genome altered."""
         altered_bp: int = cnvs["Size"].sum(skipna=True)
         fga: float = altered_bp / self.genome_size
         return round(fga, 4)
-
-    def save_fga_summary(self, fga_summary: DataFrame, output_csv: str) -> None:
-        """Save FGA summary to a CSV file."""
-        fga_summary_path = Path(self.results_directory, output_csv)
-        fga_summary.to_csv(fga_summary_path, index=False)
-
-    def compute_fga(self, output_csv) -> None:
-        """Process all CNV files in a directory and save FGA summary."""
-        fga_summary = []
-
-        for filepath in self.data_directory.glob("*.txt"):
-            sample_id: str = filepath.stem.split("_")[0]
-            cnvs: DataFrame = self.read_cnv_file(filepath)
-
-            # Calculate purity-corrected log2 ratios
-            cnvs: DataFrame = self.get_purity_corrected_log2_ratios_cnvs(
-                sample_id, cnvs
-            )
-
-            # Filter CNVs
-            filtered_cnvs = self.get_filtered_cnvs(cnvs)
-
-            # Compute FGA
-            fga: float = self.calculate_fga_for_sample(filtered_cnvs)
-            fga_summary.append({"SampleID": sample_id, "FGA": fga})
-
-        fga_summary.sort(key=lambda x: int(x["SampleID"]))
-        self.save_fga_summary(DataFrame(fga_summary), output_csv)
 
 
 if __name__ == "__main__":
