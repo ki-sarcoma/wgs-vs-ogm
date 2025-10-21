@@ -64,7 +64,7 @@ plt.text(
 
 # Upper limit
 plt.text(
-    x_text,
+    x_text - 0.005,
     loa_upper + y_text_offset,
     "+1.96 SD",
     color="green",
@@ -72,7 +72,7 @@ plt.text(
     fontsize=10,
 )
 plt.text(
-    x_text,
+    x_text - 0.005,
     loa_upper - y_text_offset,
     f"{loa_upper:.3f}",
     color="green",
