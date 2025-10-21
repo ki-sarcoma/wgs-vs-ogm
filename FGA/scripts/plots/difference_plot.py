@@ -5,7 +5,7 @@ import numpy as np
 
 # Paths
 script_dir = Path(__file__).resolve().parent
-results_directory = Path(script_dir.parent, "results").resolve()
+results_directory = Path(script_dir.parent.parent, "results").resolve()
 
 ogm_file = Path(results_directory, "ogm_fga.csv")
 wgs_file = Path(results_directory, "wgs_fga.csv")
