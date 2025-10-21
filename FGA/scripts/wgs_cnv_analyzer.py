@@ -2,8 +2,10 @@ from pathlib import Path
 from numpy import log2, maximum
 from pandas import DataFrame, Series, read_csv
 
+from cnv_analyzer import CNVAnalyzer
 
-class WGSCNVAnalyzer:
+
+class WGSCNVAnalyzer(CNVAnalyzer):
     def __init__(
         self,
         data_directory: Path = None,
@@ -13,22 +15,19 @@ class WGSCNVAnalyzer:
         min_size: int = None,
         log2_threshold: float = None,
     ):
-        if data_directory is None:
-            script_dir = Path(__file__).resolve().parent
-            self.data_directory = Path(script_dir.parent, "data", "WGS").resolve()
-        else:
-            self.data_directory = Path(data_directory).resolve()
+        super().__init__(
+            data_directory=data_directory,
+            results_directory=results_directory,
+            genome_size=genome_size,
+            keep_autosomes_only=keep_autosomes_only,
+            min_size=min_size,
+            log2_threshold=log2_threshold,
+        )
 
-        if results_directory is None:
-            script_dir = Path(__file__).resolve().parent
-            self.results_directory = Path(script_dir.parent, "results").resolve()
-        else:
-            self.results_directory = Path(results_directory).resolve()
-
-        self.genome_size = genome_size
-        self.min_size = min_size
-        self.log2_threshold = log2_threshold
-        self.keep_autosomes_only = keep_autosomes_only
+    def get_data_directory(self) -> Path:
+        """Get the data directory path."""
+        script_dir = Path(__file__).resolve().parent
+        return Path(script_dir.parent, "data", "WGS").resolve()
 
     def read_cnv_file(self, filepath) -> DataFrame:
         """Read a single CNV file and return a dataframe."""
