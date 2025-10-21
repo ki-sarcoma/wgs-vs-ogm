@@ -1,6 +1,5 @@
 from pathlib import Path
 from pandas import DataFrame, Series, read_csv
-from numpy import log2, maximum
 
 from cnv_analyzer import CNVAnalyzer
 
@@ -14,6 +13,8 @@ class OGMCNVAnalyzer(CNVAnalyzer):
         keep_autosomes_only: bool = True,
         min_size: int = None,
         log2_threshold: float = None,
+        chr_col_name: str = "Chromosome",
+        size_col_name: str = "Size",
     ):
         super().__init__(
             data_directory=data_directory,
@@ -22,6 +23,8 @@ class OGMCNVAnalyzer(CNVAnalyzer):
             keep_autosomes_only=keep_autosomes_only,
             min_size=min_size,
             log2_threshold=log2_threshold,
+            chr_col_name=chr_col_name,
+            size_col_name=size_col_name,
         )
 
     def get_data_directory(self) -> Path:
@@ -37,32 +40,9 @@ class OGMCNVAnalyzer(CNVAnalyzer):
         """Read a single CNV file and return a dataframe."""
         return read_csv(filepath, sep="\t", header=5)
 
-    def get_purity_corrected_log2_ratios_cnvs(
-        self, sample_id: str, cnvs: DataFrame
-    ) -> DataFrame:
-        """Calculate purity-corrected log2 ratios for CNVs."""
-        sample_purity: float = self.get_sample_purity(sample_id)
-        copy_number_obs = cnvs["fractionalCopyNumber"]
-        copy_number_tumor = maximum(
-            (copy_number_obs - 2 * (1 - sample_purity)) / sample_purity, 0.01
-        )
-        cnvs["log2_corrected"] = round(log2(copy_number_tumor / 2), 2)
-        return cnvs
-
-    def get_filtered_cnvs_by_autosomes(self, cnvs: DataFrame) -> DataFrame:
-        """Filter CNVs to keep only autosomes (chromosomes 1-22)."""
-        cnvs_filtered = cnvs[cnvs["Chromosome"].astype(str).str.isdigit()]
-        return cnvs_filtered[cnvs_filtered["Chromosome"].astype(int).between(1, 22)]
-
-    def get_filtered_cnvs_by_size(self, cnvs: DataFrame) -> DataFrame:
-        """Filter CNVs based on minimum size threshold."""
-        return cnvs[cnvs["Size"] >= self.min_size]
-
-    def calculate_fga_for_sample(self, cnvs: DataFrame) -> float:
-        """Calculate fraction of genome altered."""
-        altered_bp: int = cnvs["Size"].sum(skipna=True)
-        fga: float = altered_bp / self.genome_size
-        return round(fga, 4)
+    def get_copy_number_obs(self, cnvs: DataFrame) -> Series:
+        """Get observed copy number from CNVs."""
+        return cnvs["fractionalCopyNumber"]
 
 
 if __name__ == "__main__":
