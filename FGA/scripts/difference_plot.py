@@ -16,6 +16,7 @@ df_wgs = pd.read_csv(wgs_file)
 
 # Merge data on SampleID
 df = pd.merge(df_ogm, df_wgs, on="SampleID", suffixes=("_OGM", "_WGS"))
+n_samples = len(df)
 
 # Bland-Altman calculations
 mean_values = df[["FGA_OGM", "FGA_WGS"]].mean(axis=1)
@@ -95,6 +96,21 @@ plt.text(
     color="green",
     va="top",
     fontsize=10,
+)
+
+
+# Add sample size
+plt.text(
+    0,
+    0.157,
+    f"n= {n_samples}",
+    fontsize=10,
+    bbox=dict(
+        facecolor="white",
+        boxstyle="round,rounding_size=0.2, pad=0.3",
+        alpha=0.9,
+        edgecolor="gray",
+    ),
 )
 
 plt.xlabel("Mean FGA (OGM & WGS)", fontsize=12)

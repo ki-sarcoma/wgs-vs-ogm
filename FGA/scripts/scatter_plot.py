@@ -39,7 +39,7 @@ plt.xlabel("FGA (OGM)", fontsize=12)
 plt.ylabel("FGA (WGS)", fontsize=12)
 plt.grid(True, linestyle="--", alpha=0.4)
 
-# Add correlation
+# Add sample size
 plt.text(
     -0.03,
     1,
@@ -53,7 +53,7 @@ plt.text(
     ),
 )
 
-# Add sample size
+# Add correlation coefficient
 plt.text(
     -0.03,
     0.94,
